@@ -61,7 +61,15 @@ using sumproc_t = float(float const *begin, float const *end);
 void show(char const *name, sumproc_t *proc, float const *b, float const *e, float expected)
 {
     float actual = proc(b, e);
-    std::printf("%15s %16.10e %9.3e\n", name, actual, actual - expected);
+    std::printf("%15s %16.10e ", name, actual);
+    if (actual == expected)
+    {
+        std::printf("zero\n");
+    }
+    else
+    {
+        std::printf("%9.3e\n", actual - expected);
+    }
 }
 
 void test(float expected, std::vector<float> const &data)
@@ -74,7 +82,7 @@ void test(float expected, std::vector<float> const &data)
     show("kahan", kahan, b, e, expected);
 }
 
-std::tuple<std::string, float, std::vector<float>>
+std::tuple< float, std::vector<float>>
 read_file(char const *fn)
 {
     auto size = std::filesystem::file_size(fn);
@@ -84,10 +92,10 @@ read_file(char const *fn)
     fs.read(reinterpret_cast<char *>(p.get()), size);
     auto e = p[0];
     std::vector<float> data(p.get() + 1, p.get() + count);
-    return {fn, e, data};
+    return {e, data};
 }
 
-std::tuple<std::string, float, std::vector<float>>
+std::tuple< float, std::vector<float>>
 create_data()
 {
     std::vector<float> ones(1 << 25);
@@ -95,13 +103,12 @@ create_data()
     {
         e = 1.0f;
     }
-    return {"2**25 ones", 1 << 25, ones};
+    return {1 << 25, ones};
 }
 
 int main(int argc, char const *argv[])
 {
-    auto [title, expected, data] = argc == 2 ? read_file(argv[1]) : create_data();
-    std::cout << title << std::endl;
+    auto [expected, data] = argc == 2 ? read_file(argv[1]) : create_data();
     test(expected, data);
     return 0;
 }
