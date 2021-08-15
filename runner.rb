@@ -10,33 +10,62 @@ def seed
   1
 end
 
+ITEM_COUNT = 1e4
+
 def expected(data)
-  data.pack("f*").unpack("f*").map(&:to_r).sum.to_f
+  src = data.pack("f*").unpack("f*").map(&:to_r)
+  sum = 0r
+  src.map{ |e|
+    sum+=e
+    sum.to_f
+  }
 end
 
-def Samples.flat_rand_0_to_1
+def Samples.flat_rand_0_1
   rng = Random.new(seed)
-  data = Array.new(1e5){ rng.rand }
-  [expected(data), data]
+  Array.new(ITEM_COUNT){ rng.rand(0.0..1.0) }
 end
 
-def Samples.rand_exp_1e5
+def Samples.flat_rand_m1_1
   rng = Random.new(seed)
-  data = Array.new(1e5){ 2**(rng.rand*20) }
-  [expected(data), data]
+  Array.new(ITEM_COUNT){ rng.rand(-1.0..1.0) }
 end
 
-def Samples.flat_exp_1e5pm
+def exp_flat_rand(n)
+  exprange = (-n..n)
   rng = Random.new(seed)
-  data = Array.new(1e5){ (rng.rand(2)==0 ? -1 : 1)*2**(rng.rand*20) }
-  [expected(data), data]
+  Array.new(ITEM_COUNT){ 2**rng.rand(exprange) }
 end
 
-Samples.singleton_methods.each do |name|
-  expected, data = Samples.send(name)
-  values = [expected] + data
+def Samples.exp_flat_rand_8
+  exp_flat_rand(8)
+end
+
+def Samples.exp_flat_rand_32
+  exp_flat_rand(32)
+end
+
+def Samples.huge_first
+  range = (0.9..1.1)
+  rng = Random.new(seed)
+  [2**22]+Array.new(ITEM_COUNT-1){ |n| rng.rand(range) }
+end
+
+def Samples.increase_pow8
+  rng = Random.new(seed)
+  Array.new(ITEM_COUNT){ |n| n**8 }
+end
+
+def Samples.decrease_pow8
+  rng = Random.new(seed)
+  Array.new(ITEM_COUNT){ |n| (ITEM_COUNT-n)**8 }
+end
+
+Samples.singleton_methods.sort.each do |name|
+  puts name
+  data = Samples.send(name)
+  values = expected(data)+data
   bins = values.pack("f*")
   File.open( "data", "w" ){ |f| f.write(bins) }
-  puts name
   puts %x(./kahancha data)
 end

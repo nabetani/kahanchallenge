@@ -59,9 +59,16 @@ float sum_of_parts(float const *begin, float const *end)
 
 float sort_kahan(float const *begin, float const *end)
 {
+
     std::vector<float> v(begin, end);
-    std::sort(v.rbegin(), v.rend());
-    return kahan(v.data(), v.data() + v.size());
+    float  *b = v.data();
+    float  *e = b + v.size();
+    std::sort(b, e, //
+              [](float a, float b) -> bool
+              {
+                  return !(std::abs(a) <= std::abs(b));
+              });
+    return kahan(b, e);
 }
 
 using sumproc_t = float(float const *begin, float const *end);
@@ -85,8 +92,6 @@ void show(char const *name, sumproc_t *proc, std::vector<float> const &expected,
 
 void test(std::vector<float> const &expected, std::vector<float> const &data)
 {
-    auto b = data.data();
-    auto e = b + data.size();
     show("sum", sum, expected, data);
     show("with_double", with_double, expected, data);
     show("sum_of_parts", sum_of_parts, expected, data);
