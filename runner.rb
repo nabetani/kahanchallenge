@@ -10,7 +10,7 @@ def seed
   1
 end
 
-ITEM_COUNT = 1e4
+ITEM_COUNT = 1e4.to_i
 
 def expected(data)
   src = data.pack("f*").unpack("f*").map(&:to_r)
@@ -51,17 +51,20 @@ def Samples.huge_first
   [2**22]+Array.new(ITEM_COUNT-1){ |n| rng.rand(range) }
 end
 
-def Samples.increase_pow8
+def shuffled(n)
   rng = Random.new(seed)
-  Array.new(ITEM_COUNT){ |n| n**8 }
+  v = Array.new(n){ rng.rand }
+  (0...n).sort_by{ |ix| v[ix] }
 end
 
-def Samples.decrease_pow8
+def Samples.pow8
   rng = Random.new(seed)
-  Array.new(ITEM_COUNT){ |n| (ITEM_COUNT-n)**8 }
+  nums = shuffled(ITEM_COUNT)
+  nums.map{ |n| (ITEM_COUNT-n)**8 }
 end
 
 Samples.singleton_methods.sort.each do |name|
+  next unless name==:pow8
   puts name
   data = Samples.send(name)
   values = expected(data)+data
