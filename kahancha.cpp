@@ -59,10 +59,9 @@ float sum_of_parts(float const *begin, float const *end)
 
 float sort_kahan(float const *begin, float const *end)
 {
-
     std::vector<float> v(begin, end);
-    float  *b = v.data();
-    float  *e = b + v.size();
+    float *b = v.data();
+    float *e = b + v.size();
     std::sort(b, e, //
               [](float a, float b) -> bool
               {
@@ -87,7 +86,7 @@ void show(char const *name, sumproc_t *proc, std::vector<float> const &expected,
         sum2 += diff * diff;
     }
     auto stdev = std::sqrt(sum2 / count);
-    std::printf("%15s %16.10e\n", name, stdev);
+    std::printf("%15s,%16.10e\n", name, stdev);
 }
 
 void test(std::vector<float> const &expected, std::vector<float> const &data)
