@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 
 float sum(float const *begin, float const *end)
 {
@@ -56,54 +57,68 @@ float sum_of_parts(float const *begin, float const *end)
     return sum_of_parts(begin, mid) + sum_of_parts(mid, end);
 }
 
-using sumproc_t = float(float const *begin, float const *end);
-
-void show(char const *name, sumproc_t *proc, float const *b, float const *e, float expected)
+float sort_kahan(float const *begin, float const *end)
 {
-    float actual = proc(b, e);
-    std::printf("%15s %16.10e ", name, actual);
-    if (actual == expected)
-    {
-        std::printf("zero\n");
-    }
-    else
-    {
-        std::printf("%9.3e\n", actual - expected);
-    }
+    std::vector<float> v(begin, end);
+    std::sort(v.rbegin(), v.rend());
+    return kahan(v.data(), v.data() + v.size());
 }
 
-void test(float expected, std::vector<float> const &data)
+using sumproc_t = float(float const *begin, float const *end);
+
+void show(char const *name, sumproc_t *proc, std::vector<float> const &expected, std::vector<float> const &data)
+{
+    auto size = data.size();
+    double sum2 = 0;
+    auto b = data.data();
+    auto skip = size / 10;
+    auto count = data.size() - skip;
+    for (size_t ix = skip; ix < size; ++ix)
+    {
+        auto sum = proc(b, b + ix + 1);
+        auto diff = (sum - expected[ix]) / expected[ix];
+        sum2 += diff * diff;
+    }
+    auto stdev = std::sqrt(sum2 / count);
+    std::printf("%15s %16.10e\n", name, stdev);
+}
+
+void test(std::vector<float> const &expected, std::vector<float> const &data)
 {
     auto b = data.data();
     auto e = b + data.size();
-    show("sum", sum, b, e, expected);
-    show("with_double", with_double, b, e, expected);
-    show("sum_of_parts", sum_of_parts, b, e, expected);
-    show("kahan", kahan, b, e, expected);
+    show("sum", sum, expected, data);
+    show("with_double", with_double, expected, data);
+    show("sum_of_parts", sum_of_parts, expected, data);
+    show("kahan", kahan, expected, data);
+    show("sort_kahan", sort_kahan, expected, data);
 }
 
-std::tuple< float, std::vector<float>>
+std::tuple<std::vector<float>, std::vector<float>>
 read_file(char const *fn)
 {
     auto size = std::filesystem::file_size(fn);
-    auto count = size / sizeof(float);
-    auto p = std::make_unique<float[]>(count);
+    auto count = size / sizeof(float) / 2;
+    auto p = std::make_unique<float[]>(count * 2);
     auto fs = std::ifstream(fn);
     fs.read(reinterpret_cast<char *>(p.get()), size);
-    auto e = p[0];
-    std::vector<float> data(p.get() + 1, p.get() + count);
-    return {e, data};
+    std::vector<float> e(p.get(), p.get() + count);
+    std::vector<float> d(p.get() + count, p.get() + count * 2);
+    return {e, d};
 }
 
-std::tuple< float, std::vector<float>>
+std::tuple<std::vector<float>, std::vector<float>>
 create_data()
 {
-    std::vector<float> ones(1 << 25);
-    for (auto &e : ones)
+    size_t count = 1 << 25;
+    std::vector<float> data(count);
+    std::vector<float> expected(count);
+    for (size_t ix = 0; ix < count; ++ix)
     {
-        e = 1.0f;
+        data[ix] = 1;
+        expected[ix] = ix + 1;
     }
-    return {1 << 25, ones};
+    return {expected, data};
 }
 
 int main(int argc, char const *argv[])
