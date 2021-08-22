@@ -1,4 +1,5 @@
 py/*.csv
 py/*.png
+py/venv
 kahancha
 data

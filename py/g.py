@@ -6,13 +6,15 @@ import glob
 import pathlib
 
 def plotGraph(data, title):
-
     fig = plt.figure(figsize=(4,2), dpi=200)
     ax = fig.add_subplot(1, 1, 1)
-
+    x = [e[0] for e in data]
+    y = [e[1] for e in data]
     ax.barh(
-        [e[0] for e in data],
-        [e[1] for e in data]    )
+        x,
+        y,
+        log=True )
+
     ax.set_title('Error ('+title+")")
     fig.subplots_adjust(left=0.3, bottom=0.25, top=0.8)
     plt.savefig(title) # -----(2)

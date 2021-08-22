@@ -63,6 +63,15 @@ def Samples.neghuge_first
   [-2**22]+Array.new(ITEM_COUNT-1){ |n| rng.rand(range) }
 end
 
+def Samples.malicious
+  rng = Random.new(seed)
+  ary = [1e18,1e12,1e6,nil,-1e18,-1e12,-1e6]
+  ic = ITEM_COUNT/ary.size*ary.size
+  Array.new(ITEM_COUNT-ic){rng.rand(1.0..2.0)}+Array.new(ic){ |i|
+    ary[i % ary.size] || rng.rand(-1.0..1.0)
+  }
+end
+
 def shuffled(n)
   rng = Random.new(seed)
   v = Array.new(n){ rng.rand }
@@ -102,7 +111,7 @@ def Samples.normal_50_10
 end
 
 Samples.singleton_methods.sort.each do |name|
-  # next unless /pow/===name.to_s
+  # next unless /mali/===name.to_s
   puts name
   data = Samples.send(name)
   values = expected(data)+data
