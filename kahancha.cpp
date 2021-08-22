@@ -41,6 +41,41 @@ float kahan(float const *begin, float const *end)
     return sum;
 }
 
+float kb1(float const *begin, float const *end)
+{
+    float sum = 0;
+    float c = 0;
+    for (auto it = begin; it != end; ++it)
+    {
+        auto t = sum + *it;
+        c += std::abs(*it) <= std::abs(sum)
+                 ? sum - t + *it
+                 : *it - t + sum;
+        sum = t;
+    }
+    return sum + c;
+}
+float kb2(float const *begin, float const *end)
+{
+    float sum = 0;
+    float c0 = 0;
+    float c1 = 0;
+    for (auto it = begin; it != end; ++it)
+    {
+        auto t = sum + *it;
+        auto v0 = std::abs(*it) <= std::abs(sum)
+                      ? sum - t + *it
+                      : *it - t + sum;
+        auto t0 = c0 + v0;
+        c1 += std::abs(v0) <= std::abs(c0)
+                  ? c0 - t0 + v0
+                  : v0 - t0 + c0;
+        c0 = t0;
+        sum = t;
+    }
+    return sum + c0 + c1;
+}
+
 float sum_of_parts(float const *begin, float const *end)
 {
     auto len = end - begin;
@@ -95,6 +130,8 @@ void test(std::vector<float> const &expected, std::vector<float> const &data)
     show("with_double", with_double, expected, data);
     show("sum_of_parts", sum_of_parts, expected, data);
     show("kahan", kahan, expected, data);
+    show("kb1", kb1, expected, data);
+    show("kb2", kb2, expected, data);
     show("sort_kahan", sort_kahan, expected, data);
 }
 
